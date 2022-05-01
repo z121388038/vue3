@@ -203,11 +203,18 @@ function has(target: object, key: string | symbol): boolean {
   return result
 }
 
+// 返回一个由目标对象自身的属性键组成的数组
 function ownKeys(target: object): (string | symbol)[] {
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY)
   return Reflect.ownKeys(target)
 }
 
+// 可变处理
+// get: 用于拦截对象的读取属性操作
+// set: 用于拦截对象的设置属性操作
+// deleteProperty: 用于拦截对象的删除属性操作
+// has: 检查一个对象是否拥有某个属性
+// ownKeys: 针对 getOwnPropertyNames、getOwnPropertySymbols、Object.keys、for...in 的代理方法
 export const mutableHandlers: ProxyHandler<object> = {
   get,
   set,
@@ -216,6 +223,7 @@ export const mutableHandlers: ProxyHandler<object> = {
   ownKeys
 }
 
+// 只读处理
 export const readonlyHandlers: ProxyHandler<object> = {
   get: readonlyGet,
   set(target, key) {
@@ -238,6 +246,7 @@ export const readonlyHandlers: ProxyHandler<object> = {
   }
 }
 
+// 浅观察处理（只观察目标对象的第一层属性）
 export const shallowReactiveHandlers = /*#__PURE__*/ extend(
   {},
   mutableHandlers,
@@ -250,6 +259,7 @@ export const shallowReactiveHandlers = /*#__PURE__*/ extend(
 // Props handlers are special in the sense that it should not unwrap top-level
 // refs (in order to allow refs to be explicitly passed down), but should
 // retain the reactivity of the normal readonly object.
+// 浅观察 && 只读处理
 export const shallowReadonlyHandlers = /*#__PURE__*/ extend(
   {},
   readonlyHandlers,

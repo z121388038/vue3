@@ -167,16 +167,30 @@ export interface ReactiveEffectRunner<T = any> {
   effect: ReactiveEffect
 }
 
+
+/*
+* @params options参数:
+* @params lazy: 是否延迟触发effect
+* @params scheduler: 调度函数
+* @params scope：全局
+* @params allowRecurse: 递归
+* @parasm onStop: 停止监听时触发
+* @parasm onTrack: 追踪时触发
+* @parasm onTrigger: 触发回调时触发
+* */
 export function effect<T = any>(
   fn: () => T,
   options?: ReactiveEffectOptions
 ): ReactiveEffectRunner {
+  // 参数fn如果也是一个effect，重置为最初始的fn参数
   if ((fn as ReactiveEffectRunner).effect) {
     fn = (fn as ReactiveEffectRunner).effect.fn
   }
 
+  // 创建ReactiveEffect对象
   const _effect = new ReactiveEffect(fn)
   if (options) {
+    // 如果有options，用传入的options覆盖掉_effect的一些行为，extend用的是Object.assign
     extend(_effect, options)
     if (options.scope) recordEffectScope(_effect, options.scope)
   }

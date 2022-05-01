@@ -14,11 +14,11 @@ import {
 import { UnwrapRefSimple, Ref } from './ref'
 
 export const enum ReactiveFlags {
-  SKIP = '__v_skip',
-  IS_REACTIVE = '__v_isReactive',
-  IS_READONLY = '__v_isReadonly',
-  IS_SHALLOW = '__v_isShallow',
-  RAW = '__v_raw'
+  SKIP = '__v_skip',              // 跳过
+  IS_REACTIVE = '__v_isReactive', // 是否响应式
+  IS_READONLY = '__v_isReadonly', // 是否只读
+  IS_SHALLOW = '__v_isShallow',   // 是否浅对比
+  RAW = '__v_raw'                 // 原生值
 }
 
 export interface Target {
@@ -55,6 +55,7 @@ function targetTypeMap(rawType: string) {
   }
 }
 
+// Object,Array,Map,Set,WeakMap,WeakSet这几种类型才可被观察
 function getTargetType(value: Target) {
   return value[ReactiveFlags.SKIP] || !Object.isExtensible(value)
     ? TargetType.INVALID
@@ -89,9 +90,11 @@ export type UnwrapNestedRefs<T> = T extends Ref ? T : UnwrapRefSimple<T>
 export function reactive<T extends object>(target: T): UnwrapNestedRefs<T>
 export function reactive(target: object) {
   // if trying to observe a readonly proxy, return the readonly version.
+  // 如果是只读对象，直接返回
   if (isReadonly(target)) {
     return target
   }
+  // 创建可响应对象
   return createReactiveObject(
     target,
     false,
@@ -178,6 +181,11 @@ export function shallowReadonly<T extends object>(target: T): Readonly<T> {
   )
 }
 
+// Target 目标对象
+// isReadonly 是否只读
+// baseHandlers 基本类型的 handlers
+// collectionHandlers 主要针对(set、map、weakSet、weakMap)的 handlers
+// proxyMap 主要针对已经是代理的数据类型
 function createReactiveObject(
   target: Target,
   isReadonly: boolean,
@@ -185,6 +193,7 @@ function createReactiveObject(
   collectionHandlers: ProxyHandler<any>,
   proxyMap: WeakMap<Target, any>
 ) {
+  // 传入的不是object就直接返回target
   if (!isObject(target)) {
     if (__DEV__) {
       console.warn(`value cannot be made reactive: ${String(target)}`)
@@ -193,22 +202,27 @@ function createReactiveObject(
   }
   // target is already a Proxy, return it.
   // exception: calling readonly() on a reactive object
+  // 如果目标对象已经是个 proxy 直接返回
   if (
     target[ReactiveFlags.RAW] &&
     !(isReadonly && target[ReactiveFlags.IS_REACTIVE])
   ) {
     return target
   }
+  // 如果已经被代理了，返回代理对象
   // target already has corresponding Proxy
   const existingProxy = proxyMap.get(target)
   if (existingProxy) {
     return existingProxy
   }
   // only a whitelist of value types can be observed.
+  // 检查目标对象是否能被观察, 不能直接返回
   const targetType = getTargetType(target)
   if (targetType === TargetType.INVALID) {
     return target
   }
+
+  // 使用 Proxy 创建 observe
   const proxy = new Proxy(
     target,
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers

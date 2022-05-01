@@ -87,6 +87,7 @@ export function shallowRef(value?: unknown) {
 }
 
 function createRef(rawValue: unknown, shallow: boolean) {
+  // 如果已经是ref直接返回
   if (isRef(rawValue)) {
     return rawValue
   }
@@ -106,12 +107,14 @@ class RefImpl<T> {
   }
 
   get value() {
+    // 依赖收集
     trackRefValue(this)
     return this._value
   }
 
   set value(newVal) {
     newVal = this.__v_isShallow ? newVal : toRaw(newVal)
+    // 比较值有没有改变，如果改变，转成可响应的，触发依赖执行
     if (hasChanged(newVal, this._rawValue)) {
       this._rawValue = newVal
       this._value = this.__v_isShallow ? newVal : toReactive(newVal)
