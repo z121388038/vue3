@@ -174,10 +174,15 @@ export type CreateAppFunction<HostElement> = (
 
 let uid = 0
 
+/**
+ * 1、通过createAppContext()创建的app默认配置
+ * 2、给刚才创建的app一顿各种加工，最后把加工好的APP返回出去
+ * */
 export function createAppAPI<HostElement>(
   render: RootRenderFunction,
   hydrate?: RootHydrateFunction
 ): CreateAppFunction<HostElement> {
+  // 这里的createApp才是真的创建app，里面的一些方法都是我们比较眼熟的吧
   return function createApp(rootComponent, rootProps = null) {
     if (!isFunction(rootComponent)) {
       rootComponent = { ...rootComponent }
@@ -188,11 +193,13 @@ export function createAppAPI<HostElement>(
       rootProps = null
     }
 
+    // 创建APP默认配置
     const context = createAppContext()
     const installedPlugins = new Set()
 
     let isMounted = false
 
+    // 然后这里根据createAppContext()创建的app默认配置一顿各种加工，最后把加工好的APP返回出去
     const app: App = (context.app = {
       _uid: uid++,
       _component: rootComponent as ConcreteComponent,

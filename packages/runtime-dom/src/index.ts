@@ -31,14 +31,20 @@ declare module '@vue/reactivity' {
   }
 }
 
+/**
+ * @param patchProp: 处理 props、Attribute、class、style、event事件这几个东西
+ * @param nodeOps: 处理 DOM 节点操作
+ */
 const rendererOptions = /*#__PURE__*/ extend({ patchProp }, nodeOps)
 
 // lazy create the renderer - this makes core renderer logic tree-shakable
 // in case the user only imports reactivity utilities from Vue.
+// 如果只依赖reactivity的话，延迟创建渲染器可以使核心渲染器支持摇树，减少包体积的大小
 let renderer: Renderer<Element | ShadowRoot> | HydrationRenderer
 
 let enabledHydration = false
 
+// web端渲染器
 function ensureRenderer() {
   return (
     renderer ||
@@ -64,6 +70,7 @@ export const hydrate = ((...args) => {
 }) as RootHydrateFunction
 
 export const createApp = ((...args) => {
+  // 创建应用app
   const app = ensureRenderer().createApp(...args)
 
   if (__DEV__) {
@@ -71,7 +78,9 @@ export const createApp = ((...args) => {
     injectCompilerOptionsCheck(app)
   }
 
+  // 先把刚才创建的app应用中的mount方法取出来，然后重写app.mount方法的时候会用得到
   const { mount } = app
+
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
     const container = normalizeContainer(containerOrSelector)
     if (!container) return

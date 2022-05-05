@@ -289,6 +289,12 @@ export const queuePostRenderEffect = __FEATURE_SUSPENSE__
  * })
  * ```
  */
+
+/**
+ * 这里可以基于别的平台自定义渲染器
+ * @param: HostNode: 用于node端
+ * @param: HostElement: 用于web端
+ */
 export function createRenderer<
   HostNode = RendererNode,
   HostElement = RendererElement
@@ -318,6 +324,14 @@ function baseCreateRenderer(
 ): HydrationRenderer
 
 // implementation
+/**
+ * @return {
+    render,
+    hydrate,  // 服务端渲染用的
+    createApp: createAppAPI(render, hydrate)
+   }
+ *
+ */
 function baseCreateRenderer(
   options: RendererOptions,
   createHydrationFns?: typeof createHydrationFunctions
@@ -351,6 +365,8 @@ function baseCreateRenderer(
 
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
+  // 这里用闭包，我觉得是做缓存用的
+  // 核心diff过程
   const patch: PatchFn = (
     n1,
     n2,
@@ -2316,6 +2332,7 @@ function baseCreateRenderer(
     return hostNextSibling((vnode.anchor || vnode.el)!)
   }
 
+  // 渲染挂载流程
   const render: RootRenderFunction = (vnode, container, isSVG) => {
     if (vnode == null) {
       if (container._vnode) {
@@ -2351,7 +2368,7 @@ function baseCreateRenderer(
 
   return {
     render,
-    hydrate,
+    hydrate,  // 服务端渲染用的
     createApp: createAppAPI(render, hydrate)
   }
 }
