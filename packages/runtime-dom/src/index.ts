@@ -82,10 +82,13 @@ export const createApp = ((...args) => {
   const { mount } = app
 
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
+    // 规范化容器处理
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
 
+    // 取出根节点
     const component = app._component
+    // 根节点不是函数并且没有render并且没有template，就把刚才规范化容器的innerHTML塞给根节点的template
     if (!isFunction(component) && !component.render && !component.template) {
       // __UNSAFE__
       // Reason: potential execution of JS expressions in in-DOM template.
@@ -108,7 +111,10 @@ export const createApp = ((...args) => {
     }
 
     // clear content before mounting
+    // app mount之前把容器的innerHTML清空，保持干净整洁
     container.innerHTML = ''
+
+    // 然后把刚才取出来的mount捡起来继续执行以下
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {
       container.removeAttribute('v-cloak')
