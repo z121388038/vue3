@@ -286,6 +286,12 @@ export function createAppAPI<HostElement>(
       },
 
       // 挂载组件用的
+      // mount方法干了以下几件事情：
+      // 1. 创建根组件对应的vNode
+      // 2. 在根组件vNode上面存储应用上下文
+      // 3. 把vNode渲染成真实节点并挂载
+      // 4. 添加挂载状态
+      // 5. 给应用添加根组件容易
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
@@ -319,7 +325,7 @@ export function createAppAPI<HostElement>(
             // web端渲染用的
             render(vnode, rootContainer, isSVG)
           }
-          // 挂载完成打个标志，防止重新挂载
+          // 修改挂载状态，防止重新挂载
           isMounted = true
 
           // 给应用添加根组件容器
@@ -343,6 +349,7 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      // 卸载，根据isMounted状态，直接给render函数传null的内容来达到卸载的功能
       unmount() {
         if (isMounted) {
           render(null, app._container)
