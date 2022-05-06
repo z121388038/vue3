@@ -285,20 +285,25 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 挂载组件用的
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
         isSVG?: boolean
       ): any {
+        // 如果没有挂载就在这开始挂载
         if (!isMounted) {
+          // 创建根组件对应的vNode
           const vnode = createVNode(
             rootComponent as ConcreteComponent,
             rootProps
           )
           // store app context on the root VNode.
           // this will be set on the root instance on initial mount.
+          // 在根 VNode 上存储应用上下文。这将在初始挂载时在根实例上设置。
           vnode.appContext = context
 
+          // 热更新用的
           // HMR root reload
           if (__DEV__) {
             context.reload = () => {
@@ -306,12 +311,18 @@ export function createAppAPI<HostElement>(
             }
           }
 
+          // 把vNode渲染成真实节点，然后把他挂载到指定位置
           if (isHydrate && hydrate) {
+            // 服务端渲染用的
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {
+            // web端渲染用的
             render(vnode, rootContainer, isSVG)
           }
+          // 挂载完成打个标志，防止重新挂载
           isMounted = true
+
+          // 给应用添加根组件容器
           app._container = rootContainer
           // for devtools and telemetry
           ;(rootContainer as any).__vue_app__ = app
