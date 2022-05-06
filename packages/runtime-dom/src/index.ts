@@ -114,7 +114,7 @@ export const createApp = ((...args) => {
     // app mount之前把容器的innerHTML清空，保持干净整洁
     container.innerHTML = ''
 
-    // 然后把刚才取出来的mount捡起来继续执行以下
+    // 然后把刚才取出来的mount捡起来继续执行以下, 就是createAppAPI里面的那个mount
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {
       container.removeAttribute('v-cloak')
