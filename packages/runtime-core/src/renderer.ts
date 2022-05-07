@@ -368,9 +368,9 @@ function baseCreateRenderer(
   // 这里用闭包，我觉得是做缓存用的
   // 核心diff过程
   const patch: PatchFn = (
-    n1,
-    n2,
-    container,
+    n1, // 旧的vNode
+    n2, // 新的vNode
+    container,  // 挂载的容器
     anchor = null,
     parentComponent = null,
     parentSuspense = null,
@@ -378,11 +378,13 @@ function baseCreateRenderer(
     slotScopeIds = null,
     optimized = __DEV__ && isHmrUpdating ? false : !!n2.dynamicChildren
   ) => {
+    // 一模一样直接返回
     if (n1 === n2) {
       return
     }
 
     // patching & not same type, unmount old tree
+    // 对比新旧vNode，如果新旧vNode的type、key都不一样，直接卸载老的vNode(n1)并设为 null
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
       unmount(n1, parentComponent, parentSuspense, true)
@@ -395,13 +397,17 @@ function baseCreateRenderer(
     }
 
     const { type, ref, shapeFlag } = n2
+    // 根据type类型做不同的处理
     switch (type) {
+      // 处理文本
       case Text:
         processText(n1, n2, container, anchor)
         break
+      // 处理注释节点
       case Comment:
         processCommentNode(n1, n2, container, anchor)
         break
+      // 处理静态节点
       case Static:
         if (n1 == null) {
           mountStaticNode(n2, container, anchor, isSVG)
@@ -409,6 +415,7 @@ function baseCreateRenderer(
           patchStaticNode(n1, n2, container, isSVG)
         }
         break
+      // 处理fragment, vue3的模板结构中的template允许多个标签，不需要指定根标签。就是因为vue会自动将多个标签用fragment包裹。
       case Fragment:
         processFragment(
           n1,
@@ -424,6 +431,7 @@ function baseCreateRenderer(
         break
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
+          // 处理DOM元素
           processElement(
             n1,
             n2,
@@ -436,6 +444,7 @@ function baseCreateRenderer(
             optimized
           )
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 处理组件
           processComponent(
             n1,
             n2,
@@ -448,6 +457,7 @@ function baseCreateRenderer(
             optimized
           )
         } else if (shapeFlag & ShapeFlags.TELEPORT) {
+          // 处理teleport标签包裹的元素，比如我们经常用的dialog现在可以插入到指点节点
           ;(type as typeof TeleportImpl).process(
             n1 as TeleportVNode,
             n2 as TeleportVNode,
@@ -461,6 +471,8 @@ function baseCreateRenderer(
             internals
           )
         } else if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
+          // 处理suspense标签包裹的元素， 例如存在异步请求啥的
+          // 作用文档地址：https://v3.cn.vuejs.org/guide/migration/suspense.html#%E4%BB%8B%E7%BB%8D
           ;(type as typeof SuspenseImpl).process(
             n1,
             n2,
@@ -586,6 +598,7 @@ function baseCreateRenderer(
     hostRemove(anchor!)
   }
 
+  // 处理element
   const processElement = (
     n1: VNode | null,
     n2: VNode,
@@ -622,6 +635,7 @@ function baseCreateRenderer(
     }
   }
 
+  // 挂载element
   const mountElement = (
     vnode: VNode,
     container: RendererElement,
@@ -784,6 +798,7 @@ function baseCreateRenderer(
     }
   }
 
+  // 挂载子节点
   const mountChildren: MountChildrenFn = (
     children,
     container,
@@ -1064,6 +1079,7 @@ function baseCreateRenderer(
     }
   }
 
+  // 处理fragment节点
   const processFragment = (
     n1: VNode | null,
     n2: VNode,
@@ -1162,6 +1178,7 @@ function baseCreateRenderer(
     }
   }
 
+  // 处理组件
   const processComponent = (
     n1: VNode | null,
     n2: VNode,
@@ -1176,6 +1193,8 @@ function baseCreateRenderer(
     n2.slotScopeIds = slotScopeIds
     if (n1 == null) {
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+        // 激活keep-alive的组件
+        // !. 语法说明：https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#non-null-assertion-operator-postfix-
         ;(parentComponent!.ctx as KeepAliveContext).activate(
           n2,
           container,
@@ -1184,6 +1203,7 @@ function baseCreateRenderer(
           optimized
         )
       } else {
+        // 挂载组件
         mountComponent(
           n2,
           container,
@@ -1195,10 +1215,12 @@ function baseCreateRenderer(
         )
       }
     } else {
+      // 更新组件
       updateComponent(n1, n2, optimized)
     }
   }
 
+  // 挂载组件
   const mountComponent: MountComponentFn = (
     initialVNode,
     container,
@@ -1212,6 +1234,8 @@ function baseCreateRenderer(
     // mounting
     const compatMountInstance =
       __COMPAT__ && initialVNode.isCompatRoot && initialVNode.component
+    // 1. 创建组件实例
+    // 2. initialVNode.component = createComponentInstance: 把组件实例挂载到了组件vnode的component属性上
     const instance: ComponentInternalInstance =
       compatMountInstance ||
       (initialVNode.component = createComponentInstance(
@@ -1220,6 +1244,7 @@ function baseCreateRenderer(
         parentSuspense
       ))
 
+    // 热更新
     if (__DEV__ && instance.type.__hmrId) {
       registerHMR(instance)
     }
@@ -1230,6 +1255,7 @@ function baseCreateRenderer(
     }
 
     // inject renderer internals for keepAlive
+    // keep-alive组件的话，给keep-alive组件的renderer 赋值内部结构
     if (isKeepAlive(initialVNode)) {
       ;(instance.ctx as KeepAliveContext).renderer = internals
     }
@@ -1239,6 +1265,7 @@ function baseCreateRenderer(
       if (__DEV__) {
         startMeasure(instance, `init`)
       }
+      // 设置组件实例
       setupComponent(instance)
       if (__DEV__) {
         endMeasure(instance, `init`)
@@ -1247,11 +1274,13 @@ function baseCreateRenderer(
 
     // setup() is async. This component relies on async logic to be resolved
     // before proceeding
+    // setup() 是异步的。该组件依赖异步逻辑来解决，通过注册Dep解决
     if (__FEATURE_SUSPENSE__ && instance.asyncDep) {
       parentSuspense && parentSuspense.registerDep(instance, setupRenderEffect)
 
       // Give it a placeholder if this is not hydration
       // TODO handle self-defined fallback
+      // 如果是空节点，给个占位符处理
       if (!initialVNode.el) {
         const placeholder = (instance.subTree = createVNode(Comment))
         processCommentNode(null, placeholder, container!, anchor)
@@ -1259,6 +1288,7 @@ function baseCreateRenderer(
       return
     }
 
+    // 设置并运行带有副作用的渲染函数
     setupRenderEffect(
       instance,
       initialVNode,

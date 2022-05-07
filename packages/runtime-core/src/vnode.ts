@@ -397,6 +397,13 @@ const normalizeRef = ({
   ) as any
 }
 
+/**
+ * 创建vNode过程：
+ * 1. 规范化class & style（例如：class=[]、class={}、style=[]等格式）
+ * 2. 标记vnode的类型shapeFlag，即根组件对应的vnode类型（type即为根组件rootComponent，此时根组件为对象格式，所以shapeFlag即为4）
+ * 3. 标准化子节点（初始化时，children为空）
+ * 4. 收集动态子代节点或子代block到父级block tree（这里便是vue3引入的新概念：block tree，篇幅有限，本文就不展开陈述了）
+ */
 function createBaseVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
   props: (Data & VNodeProps) | null = null,
@@ -408,16 +415,16 @@ function createBaseVNode(
   needFullChildrenNormalization = false
 ) {
   const vnode = {
-    __v_isVNode: true,
-    __v_skip: true,
-    type,
-    props,
+    __v_isVNode: true,  // 是否为vnode
+    __v_skip: true, // 跳过响应式数据化
+    type, // 创建vnode的第一个参数
+    props,  // DOM参数
     key: props && normalizeKey(props),
     ref: props && normalizeRef(props),
     scopeId: currentScopeId,
     slotScopeIds: null,
     children,
-    component: null,
+    component: null,  // 组件实例（instance），通过createComponentInstance创建
     suspense: null,
     ssContent: null,
     ssFallback: null,
@@ -428,13 +435,14 @@ function createBaseVNode(
     target: null,
     targetAnchor: null,
     staticCount: 0,
-    shapeFlag,
+    shapeFlag,  // 类型标记，在patch阶段，通过匹配shapeFlag进行相应的渲染过程
     patchFlag,
     dynamicProps,
     dynamicChildren: null,
     appContext: null
   } as VNode
 
+  // 标准化子节点
   if (needFullChildrenNormalization) {
     normalizeChildren(vnode, children)
     // normalize suspense children
@@ -455,6 +463,7 @@ function createBaseVNode(
   }
 
   // track vnode for block tree
+  // 收集动态子代节点或子代block到父级block tree
   if (
     isBlockTreeEnabled > 0 &&
     // avoid a block node from tracking itself

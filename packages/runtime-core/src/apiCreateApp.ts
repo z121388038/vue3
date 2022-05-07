@@ -222,6 +222,7 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      // 给app应用挂载插件
       use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
@@ -240,6 +241,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 添加mixin, mixin只支持 OptionsApi 的写法
       mixin(mixin: ComponentOptions) {
         if (__FEATURE_OPTIONS_API__) {
           if (!context.mixins.includes(mixin)) {
@@ -256,6 +258,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 添加子组件
       component(name: string, component?: Component): any {
         if (__DEV__) {
           validateComponentName(name, context.config)

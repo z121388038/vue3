@@ -446,6 +446,7 @@ const emptyAppContext = createAppContext()
 
 let uid = 0
 
+// 创建组件实例方法
 export function createComponentInstance(
   vnode: VNode,
   parent: ComponentInternalInstance | null,
@@ -453,23 +454,26 @@ export function createComponentInstance(
 ) {
   const type = vnode.type as ConcreteComponent
   // inherit parent app context - or - if root, adopt from root vnode
+  // 继承父应用上下文 - 或 - 如果是根，则从根 vnode 采用
+  // 绑定应用的上下文，继承父应用上下文 || vnode的上下文 || 初始化应用的上下文
   const appContext =
     (parent ? parent.appContext : vnode.appContext) || emptyAppContext
 
+  // 组件实例拥有的默认值：
   const instance: ComponentInternalInstance = {
-    uid: uid++,
-    vnode,
-    type,
-    parent,
-    appContext,
-    root: null!, // to be immediately set
-    next: null,
-    subTree: null!, // will be set synchronously right after creation
-    effect: null!,
-    update: null!, // will be set synchronously right after creation
-    scope: new EffectScope(true /* detached */),
-    render: null,
-    proxy: null,
+    uid: uid++, // 组件唯一id
+    vnode, // 组件的vnode
+    type, // vnode的节点类型
+    parent, // 父组件的实例instance
+    appContext, // 刚才绑定的应用上下文
+    root: null!, // 根节点   // to be immediately set
+    next: null, // 当前组件mounted时，为null，将设置为instance.vnode，下次update时，将执行updateComponentPreRender
+    subTree: null!, // 组件的渲染vnode，由组件的render函数生成，创建后同步  // will be set synchronously right after creation
+    effect: null!,  // 副作用
+    update: null!, // 组件内容挂载或更新到视图的执行回调，创建后同步   // will be set synchronously right after creation
+    scope: new EffectScope(true /* detached */),  // 全局副作用
+    render: null, // 组件的render函数，在setupStatefulComponent阶段赋值
+    proxy: null,  // 是一个proxy代理ctx字段，内部使用this时，指向它
     exposed: null,
     exposeProxy: null,
     withProxy: null,
@@ -579,6 +583,7 @@ export function isStatefulComponent(instance: ComponentInternalInstance) {
 
 export let isInSSRComponentSetup = false
 
+// 设置组件实例
 export function setupComponent(
   instance: ComponentInternalInstance,
   isSSR = false
@@ -586,10 +591,13 @@ export function setupComponent(
   isInSSRComponentSetup = isSSR
 
   const { props, children } = instance.vnode
+  // 判断是否为状态组件
   const isStateful = isStatefulComponent(instance)
+  // 初始化组件props、slots
   initProps(instance, props, isStateful, isSSR)
   initSlots(instance, children)
 
+  // 当状态组件时，挂载setup信息
   const setupResult = isStateful
     ? setupStatefulComponent(instance, isSSR)
     : undefined
