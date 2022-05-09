@@ -22,11 +22,14 @@ export const patchProp: DOMRendererOptions['patchProp'] = (
   unmountChildren
 ) => {
   if (key === 'class') {
+    // 设置class
     patchClass(el, nextValue, isSVG)
   } else if (key === 'style') {
+    // 设置style
     patchStyle(el, prevValue, nextValue)
   } else if (isOn(key)) {
     // ignore v-model listeners
+    // 添加事件监听器，并且不是v-model的
     if (!isModelListener(key)) {
       patchEvent(el, key, prevValue, nextValue, parentComponent)
     }
@@ -56,6 +59,7 @@ export const patchProp: DOMRendererOptions['patchProp'] = (
     } else if (key === 'false-value') {
       ;(el as any)._falseValue = nextValue
     }
+    // 设置attribute
     patchAttr(el, key, nextValue, isSVG, parentComponent)
   }
 }
