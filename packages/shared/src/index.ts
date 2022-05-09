@@ -14,6 +14,8 @@ export * from './looseEqual'
 export * from './toDisplayString'
 export * from './typeUtils'
 
+// 以下工具函数详细说明地址：https://juejin.cn/post/7095300384305971231
+
 // 空对象，dev环境的话是冻结的空对象
 export const EMPTY_OBJ: { readonly [key: string]: any } = __DEV__
   ? Object.freeze({})

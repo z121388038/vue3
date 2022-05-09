@@ -341,6 +341,7 @@ function baseCreateRenderer(
     initFeatureFlags()
   }
 
+  // 获取全局对象
   const target = getGlobalThis()
   target.__VUE__ = true
   if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
